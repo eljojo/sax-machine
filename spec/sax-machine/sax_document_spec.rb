@@ -535,6 +535,44 @@ describe "SAXMachine" do
         document.entries.first.url.should == "http://pauldix.net"
       end
     end
+
+    describe "when defining handlers" do
+      before :each do
+        class Foo
+          include SAXMachine
+          element :title
+        end
+        @klass = Class.new do
+          include SAXMachine
+          elements :entry, :as => :entries, :class => Foo
+
+          # def handle_entry(entry)
+          #   puts "got entry"
+          # end
+        end
+      end
+
+      it "should handle a single element with children" do
+        document = @klass.new
+        document.should_receive(:handle_entry).with(an_instance_of(Foo)).once
+        document.parse("<entry><title>a title</title></entry>")
+        document.entries.size.should == 0
+      end
+
+      it "should handle multiple elements with children" do
+        document = @klass.new
+        document.should_receive(:handle_entry).with(an_instance_of(Foo)).twice
+        document.parse("<xml><entry><title>title 1</title></entry><entry><title>title 2</title></entry></xml>")
+        document.entries.size.should == 0
+      end
+
+      it "should not handle a top level element that is specified only in a child" do
+        document = @klass.new
+        document.should_receive(:handle_entry).with(an_instance_of(Foo)).once
+        document.parse("<xml><title>no parse</title><entry><title>correct title</title></entry></xml>")
+        document.entries.size.should == 0
+      end
+    end
   end
   
   describe "when dealing with element names containing dashes" do

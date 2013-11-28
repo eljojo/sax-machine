@@ -91,6 +91,11 @@ module SAXMachine
 
       return unless config.name == name
 
+      handler_method = "handle_#{config.name}".to_sym
+      if object.respond_to?(handler_method) then
+        object.send(handler_method, element)
+      end
+
       unless parsed_config?(object, config)
         if (element_value_config = element_values_for(config))
           element_value_config.each { |evc| element.send(evc.setter, value) }
@@ -103,7 +108,7 @@ module SAXMachine
             element.send(econf.setter, value) unless econf.value_configured?
           end
 
-          object.send(config.accessor) << element
+          object.send(config.accessor) << element unless object.respond_to?(handler_method)
         else
           value =
             case config.data_class.to_s
